@@ -498,3 +498,48 @@ html.fx .reveal.in { opacity: 1; transform: none; }
 @keyframes rally-x { 0% { transform: translateX(-40px); } 70%, 100% { transform: translateX(calc(50vw + 60px)); } }
 .cats li sup { margin-left: -12px; }
 @media (max-width: 900px) { .rally { display: none; } }
+
+/* =========================================================
+   v6: live ball cursor with wake + shadow, pin standing on the court
+   ========================================================= */
+html.fx-live, html.fx-live * { cursor: none !important; }
+html.fx-live input[type=text], html.fx-live input[type=email], html.fx-live input[type=tel], html.fx-live textarea { cursor: text !important; }
+.cur, .cur-shadow, .cur-trail { position: fixed; left: 0; top: 0; pointer-events: none; z-index: 10000; will-change: transform; }
+.cur { width: 26px; height: 26px; margin: -13px 0 0 -13px; transition: opacity .2s; }
+.cur .b { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #F1FF8A, #D7EE36 55%, #A9BE1A); border: 2px solid #0A2A1F; box-shadow: 0 0 0 2px rgba(255,248,232,.9); transition: transform .18s cubic-bezier(.2,.8,.2,1), opacity .15s, background .2s; }
+.cur .b::before, .cur .b::after { content: ""; position: absolute; top: 2px; bottom: 2px; width: 9px; border: 1.6px solid #fff; border-radius: 50%; }
+.cur .b::before { left: -5px; border-left-color: transparent; border-top-color: transparent; border-bottom-color: transparent; }
+.cur .b::after { right: -5px; border-right-color: transparent; border-top-color: transparent; border-bottom-color: transparent; }
+.cur .r { position: absolute; left: -6px; top: -8px; width: 40px; height: 40px; opacity: 0; transform: rotate(-30deg) scale(.6); transition: transform .2s cubic-bezier(.2,.8,.2,1), opacity .15s; filter: drop-shadow(0 0 1.5px rgba(255,248,232,.95)); }
+.cur.on-link .b { transform: scale(.55) translate(16px, 16px); }
+.cur.on-link .r { opacity: 1; transform: rotate(-20deg) scale(1); }
+.cur.down .b { transform: scale(.8, .7); }
+.cur.down.on-link .r { transform: rotate(10deg) scale(1.05); }
+.cur.on-lime .b { background: radial-gradient(circle at 35% 30%, #FFFFFF, #FFF8E8 55%, #E9E1CB); border-color: #0A2A1F; }
+.cur.on-lime .b::before, .cur.on-lime .b::after { border-color: #103F2E; }
+.cur.on-lime .b::before { border-left-color: transparent; border-top-color: transparent; border-bottom-color: transparent; }
+.cur.on-lime .b::after { border-right-color: transparent; border-top-color: transparent; border-bottom-color: transparent; }
+.cur.hide, .cur-shadow.hide, .cur-trail.hide { opacity: 0 !important; }
+.cur-shadow { width: 24px; height: 8px; margin: -4px 0 0 -12px; border-radius: 50%; background: rgba(5,20,14,.45); filter: blur(2.5px); transition: opacity .2s; }
+.cur-trail { width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: #D7EE36; border: 1.5px solid #0A2A1F; }
+.cur-trail.on-lime { background: #FFF8E8; }
+
+/* hero: the pin is dropped onto a court lying flat beneath it */
+@media (min-width: 901px) {
+  .hero .court { right: 2%; left: auto; top: auto; bottom: 6%; width: 620px; opacity: .3; transform: perspective(900px) rotateX(64deg) rotateZ(-14deg); transform-origin: 50% 70%; }
+  .hero-mark { position: relative; align-self: end; margin-bottom: 40px; }
+  .hero-mark::after { content: ""; position: absolute; left: 50%; bottom: -14px; width: 46%; height: 22px; margin-left: -23%; border-radius: 50%; background: rgba(0,0,0,.45); filter: blur(6px); animation: pin-shadow 5s ease-in-out 1s infinite; }
+  .hero-mark img { filter: none; }
+  @keyframes pin-shadow { 50% { transform: scale(.82); opacity: .7; } }
+  .hero-mark { filter: none; }
+  .rally { left: 52%; }
+  .rally .track { bottom: 14%; }
+}
+.band-note { margin: 14px 0 0; font-size: 12px; color: rgba(255,248,232,.6); }
+.section .note { margin: 22px 0 0; font-size: 13px; opacity: .75; }
+@media (min-width: 901px) {
+  .hero { padding-bottom: 130px; }
+  .hero .court { bottom: 9%; width: 560px; right: 3%; }
+  .hero-mark { margin-bottom: 70px; width: min(270px, 64%); }
+}
+.cur .r { width: 52px; height: 52px; left: -12px; top: -16px; }
