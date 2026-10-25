@@ -10,30 +10,120 @@
 
   function $all(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
 
-  // 1. hero rally ball
-  var hero = document.querySelector(".hero");
-  if (hero) {
-    var rally = document.createElement("div");
-    rally.className = "rally"; rally.setAttribute("aria-hidden", "true");
-    rally.innerHTML = '<div class="track"><div class="hop"><span class="ball"></span></div><span class="shadow"></span></div>';
-    hero.insertBefore(rally, hero.firstChild.nextSibling);
+  // 1. hero court scene: a ball rallies over the net and bounces on the court
+  var svg = document.querySelector(".scene");
+  if (svg) {
+    var NS = "http://www.w3.org/2000/svg";
+    var F = 427, ZC = -9, HC = 6, CX = 300, HY = 112, NZ = 11.885, R = 0.25;
+    var proj = function (X, Z, Y) { var d = Z - ZC; return [CX + F * X / d, HY + F * (HC - Y) / d, F / d]; };
+    var far = svg.querySelector(".layer-far"), near = svg.querySelector(".layer-near");
+    var mk = function (tag, cls) { var e = document.createElementNS(NS, tag); if (cls) e.setAttribute("class", cls); return e; };
+    var sh = mk("ellipse", "sshadow"), ballG = mk("g", "sball"), ball = mk("circle");
+    ballG.appendChild(ball);
+    // one rally = a list of points the ball travels through; c = arc control height
+    var rally = function (s) {
+      return [
+        { X: 3.0 * s, Z: 0.8, Y: 1.0 },
+        { X: 1.9 * s, Z: 19.5, Y: 0, c: 4.2, t: 1000, bounce: true },
+        { X: 1.6 * s, Z: 24.0, Y: 1.1, c: 2.0, t: 420 },
+        { X: 2.9 * s, Z: 4.4, Y: 0, c: 4.2, t: 1000, bounce: true },
+        { X: 3.1 * s, Z: -0.4, Y: 1.0, c: 2.0, t: 420 },
+        { X: 2.2 * s, Z: 18.4, Y: 0, c: 4.6, t: 1050, bounce: true },
+        { X: 1.7 * s, Z: 23.2, Y: 0.55, c: 1.6, t: 420 },
+        { X: 1.5 * s, Z: 25.5, Y: 0, c: 1.0, t: 380, bounce: true },
+        { X: 1.4 * s, Z: 26.6, Y: 0, c: 0.15, t: 500, fade: true }
+      ];
+    };
+    var side = 1, pts = rally(side), seg = 1, segStart = 0, running = true, vis = true;
+    var addMark = function (p) {
+      var q = proj(p.X, p.Z, 0), m = mk("ellipse", "mark");
+      m.setAttribute("cx", q[0].toFixed(1)); m.setAttribute("cy", q[1].toFixed(1));
+      m.setAttribute("rx", (q[2] * 0.32).toFixed(1)); m.setAttribute("ry", (q[2] * 0.1).toFixed(1));
+      (p.Z > NZ ? far : near).appendChild(m); setTimeout(function () { m.remove(); }, 1500);
+    };
+    var draw = function (X, Z, Y, op) {
+      var layer = Z > NZ ? far : near;
+      if (ballG.parentNode !== layer) { layer.appendChild(sh); layer.appendChild(ballG); }
+      var b = proj(X, Z, Y), g = proj(X, Z, 0), r = b[2] * R;
+      ball.setAttribute("cx", b[0].toFixed(1)); ball.setAttribute("cy", (b[1] - r).toFixed(1)); ball.setAttribute("r", r.toFixed(2));
+      sh.setAttribute("cx", g[0].toFixed(1)); sh.setAttribute("cy", g[1].toFixed(1));
+      sh.setAttribute("rx", (r * 1.3 / (1 + Y * 0.25)).toFixed(2)); sh.setAttribute("ry", (r * 0.42 / (1 + Y * 0.25)).toFixed(2));
+      sh.style.opacity = (Math.max(0.25, 1 - Y * 0.22) * op).toFixed(2); ballG.style.opacity = op;
+    };
+    var step = function (now) {
+      if (!running) return;
+      if (!segStart) segStart = now;
+      if (now < segStart) { if (vis) requestAnimationFrame(step); else running = false; return; }
+      var A = pts[seg - 1], B = pts[seg], t = Math.min(1, (now - segStart) / B.t), u = 1 - t;
+      var X = A.X + (B.X - A.X) * t, Z = A.Z + (B.Z - A.Z) * t;
+      var Y = u * u * A.Y + 2 * t * u * B.c + t * t * B.Y;
+      draw(X, Z, Y, B.fade ? 1 - t : 1);
+      if (t >= 1) {
+        if (B.bounce) addMark(B);
+        seg++; segStart = now;
+        if (seg >= pts.length) { seg = 1; side = -side; pts = rally(side); segStart = now + 900; draw(0, 0, 0, 0); }
+      }
+      if (vis) requestAnimationFrame(step); else running = false;
+    };
+    requestAnimationFrame(step);
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver(function (en) {
+        vis = en[0].isIntersecting;
+        if (vis && !running) { running = true; segStart = 0; requestAnimationFrame(step); }
+      }).observe(svg);
+    }
+    // tap the pin: it jumps (and a tiny buzz on Android phones)
+    var pinEl = svg.querySelector(".scene-pin");
+    if (pinEl) pinEl.addEventListener("click", function () {
+      pinEl.classList.remove("boing"); void pinEl.getBoundingClientRect(); pinEl.classList.add("boing");
+      if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) {} }
+      setTimeout(function () { pinEl.classList.remove("boing"); }, 750);
+    });
   }
 
-  // 2. tap the hero pin to make it bounce
-  var mark = document.querySelector(".hero-mark");
-  if (mark) {
-    mark.style.pointerEvents = "auto";
-    mark.addEventListener("click", function () {
-      mark.classList.remove("boing"); void mark.offsetWidth; mark.classList.add("boing");
-      setTimeout(function () { mark.classList.remove("boing"); }, 650);
+  // 2. phones: tap empty space and a ball drops and bounces where you tapped
+  var coarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+  if (coarse) {
+    document.addEventListener("click", function (e) {
+      if (e.target.closest && e.target.closest("a, button, input, textarea, select, label, summary, .scene-pin, form")) return;
+      var d = document.createElement("span"); d.className = "drop";
+      d.style.left = e.clientX + "px"; d.style.top = e.clientY + "px";
+      d.innerHTML = "<i></i><b></b>"; document.body.appendChild(d);
+      setTimeout(function () { d.remove(); }, 1400);
     });
+  }
+
+  // 3a. a ball rolls along the top of the screen as you scroll
+  var sb = document.createElement("div"); sb.className = "scroll-ball"; sb.setAttribute("aria-hidden", "true");
+  sb.innerHTML = '<div class="bar"></div><span class="b"></span>'; document.body.appendChild(sb);
+  var bar = sb.querySelector(".bar"), sbb = sb.querySelector(".b");
+  var onScroll = function () {
+    var max = document.documentElement.scrollHeight - innerHeight, p = max > 0 ? Math.min(1, scrollY / max) : 0;
+    bar.style.transform = "scaleX(" + p + ")";
+    sbb.style.transform = "translateX(" + (p * innerWidth) + "px) rotate(" + (p * 1440) + "deg)";
+    sb.style.opacity = scrollY > 40 ? 1 : 0;
+  };
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+
+  // 3b. phones: sticky call-to-action once the hero has scrolled away, hidden at the form
+  var target = document.querySelector("#join") ? { id: "#join", text: "Your pincode needs a team", btn: "Rep your pincode" }
+                                                : { id: "#enquire", text: "Put your brand on court", btn: "Become a partner" };
+  var formSec = document.querySelector(target.id), heroSec = document.querySelector(".hero");
+  if (formSec && heroSec && "IntersectionObserver" in window) {
+    var bar2 = document.createElement("div"); bar2.className = "sticky-cta";
+    bar2.innerHTML = '<img src="assets/icon-reversed.svg" alt=""><span>' + target.text + '</span><a class="btn btn-lime" href="' + target.id + '">' + target.btn + "</a>";
+    document.body.appendChild(bar2);
+    var heroGone = false, formIn = false;
+    var upd = function () { bar2.classList.toggle("show", heroGone && !formIn); };
+    new IntersectionObserver(function (en) { heroGone = !en[0].isIntersecting; upd(); }).observe(heroSec);
+    new IntersectionObserver(function (en) { formIn = en[0].isIntersecting; upd(); }, { threshold: 0.05 }).observe(formSec);
   }
 
   // 3. ball-mark ripple on every click
   document.addEventListener("pointerdown", function (e) {
     if (e.pointerType === "touch" && e.target.closest("input, textarea, select")) return;
     var h = document.createElement("span");
-    var onDark = e.target.closest(".hero, .dark, .band, .site-footer, .fair-card.big");
+    var onDark = e.target.closest(".hero, .dark, .band, .site-footer, .fair-card.big, .sticky-cta");
     h.className = "hit" + (onDark ? "" : " dark");
     h.style.left = e.clientX + "px"; h.style.top = e.clientY + "px";
     document.body.appendChild(h);
@@ -105,7 +195,7 @@
       }
       return false;
     };
-    var CLICKABLE = "a, button, summary, label.chip, select, input[type=checkbox], input[type=radio], [role=button], .hero-mark";
+    var CLICKABLE = "a, button, summary, label.chip, select, input[type=checkbox], input[type=radio], [role=button], .scene-pin";
     document.addEventListener("pointermove", function (e) {
       if (e.pointerType !== "mouse") return;
       mx = e.clientX; my = e.clientY;

@@ -543,3 +543,78 @@ html.fx-live input[type=text], html.fx-live input[type=email], html.fx-live inpu
   .hero-mark { margin-bottom: 70px; width: min(270px, 64%); }
 }
 .cur .r { width: 52px; height: 52px; left: -12px; top: -16px; }
+
+/* =========================================================
+   v7: hero court scene (perspective court, raised net, pin on the net)
+   ========================================================= */
+.hero-scene { position: relative; width: 100%; max-width: 580px; justify-self: end; }
+.scene { display: block; width: 100%; height: auto; overflow: visible; }
+.scene .sur { fill: rgba(0,0,0,.16); }
+.scene .surf { fill: #1A5A3F; }
+.scene .ln { stroke: rgba(255,248,232,.85); stroke-width: 1.6; stroke-linecap: round; }
+.scene .netbody { fill: rgba(10,42,31,.38); }
+.scene .mesh { stroke: rgba(255,248,232,.22); stroke-width: .6; }
+.scene .tape { fill: none; stroke: #FFF8E8; stroke-width: 3; stroke-linejoin: round; }
+.scene .post { stroke: #0A2A1F; stroke-width: 5; stroke-linecap: round; }
+.scene .strap { stroke: #FFF8E8; stroke-width: 2; opacity: .8; }
+.scene .scene-pin { cursor: pointer; }
+.scene .scene-pin image { transform-box: fill-box; transform-origin: 50% 100%; animation: pin-bob 3.2s ease-in-out infinite; }
+.scene .pin-shadow { fill: rgba(0,0,0,.35); filter: blur(2px); transform-box: fill-box; transform-origin: center; animation: pin-shade 3.2s ease-in-out infinite; }
+@keyframes pin-bob { 50% { transform: translateY(-7px); } }
+@keyframes pin-shade { 50% { transform: scale(.82); opacity: .7; } }
+.scene .scene-pin.boing image { animation: pin-boing .7s cubic-bezier(.3,1.5,.5,1); }
+@keyframes pin-boing { 0% { transform: scale(1,1); } 25% { transform: scale(1.12,.84); } 55% { transform: translateY(-34px) scale(.94,1.08); } 100% { transform: none; } }
+.scene .sball circle { fill: url(#ballg); stroke: rgba(10,42,31,.5); stroke-width: .6; }
+.scene .sshadow { fill: rgba(0,0,0,.45); }
+.scene .mark { fill: none; stroke: #FFF8E8; stroke-width: 1.2; opacity: 0; animation: mark 1.4s ease-out forwards; }
+@keyframes mark { 0% { opacity: .9; } 100% { opacity: 0; } }
+.scene-hint { margin: 6px 0 0; text-align: center; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; color: rgba(255,248,232,.45); }
+.hero.hero-has-scene .hero-inner { align-items: center; }
+@media (min-width: 901px) {
+  .hero.hero-has-scene { padding-bottom: 90px; }
+  .hero.hero-has-scene .hero-inner { grid-template-columns: 1fr 1fr; gap: 24px; }
+}
+@media (max-width: 900px) {
+  .hero.hero-has-scene { padding-bottom: 40px; }
+  .hero-scene { justify-self: center; max-width: 520px; margin-top: 4px; }
+  .scene-hint { margin-top: 2px; }
+}
+
+/* =========================================================
+   phones: tap-to-drop balls, scroll ball, sticky call-to-action
+   ========================================================= */
+.drop { position: fixed; z-index: 9998; pointer-events: none; width: 0; height: 0; }
+.drop i { position: absolute; left: -11px; top: -11px; width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #F1FF8A, #D7EE36 55%, #A9BE1A); border: 1.5px solid #0A2A1F; animation: drop-y 1.3s forwards; }
+.drop b { position: absolute; left: -12px; top: 128px; width: 24px; height: 7px; border-radius: 50%; background: rgba(0,0,0,.35); filter: blur(2px); animation: drop-sh 1.3s forwards; }
+@keyframes drop-y {
+  0% { transform: translateY(0) scale(.6); animation-timing-function: cubic-bezier(.5,0,1,.5); }
+  30% { transform: translateY(130px) scale(1.1,.85); animation-timing-function: cubic-bezier(0,.5,.5,1); }
+  55% { transform: translateY(70px) scale(1); animation-timing-function: cubic-bezier(.5,0,1,.5); }
+  75% { transform: translateY(130px) scale(1.06,.9); animation-timing-function: cubic-bezier(0,.5,.5,1); }
+  88% { transform: translateY(108px); opacity: 1; animation-timing-function: cubic-bezier(.5,0,1,.5); }
+  100% { transform: translateY(130px); opacity: 0; }
+}
+@keyframes drop-sh { 0% { transform: scale(.2); opacity: 0; } 30% { transform: scale(1); opacity: 1; } 55% { transform: scale(.6); opacity: .5; } 75% { transform: scale(1); opacity: 1; } 100% { opacity: 0; } }
+
+.scroll-ball { position: fixed; z-index: 60; left: 0; right: 0; top: 0; height: 3px; pointer-events: none; padding-top: env(safe-area-inset-top, 0px); }
+.scroll-ball .bar { height: 3px; background: var(--lime); transform-origin: 0 50%; transform: scaleX(0); }
+.scroll-ball .b { position: absolute; top: calc(env(safe-area-inset-top, 0px) - 4px); left: 0; width: 11px; height: 11px; margin-left: -6px; border-radius: 50%; background: var(--lime); border: 1.5px solid var(--deep); }
+
+.sticky-cta { position: fixed; z-index: 70; left: 0; right: 0; bottom: 0; padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); background: rgba(10,42,31,.94); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: flex; align-items: center; gap: 12px; transform: translateY(110%); transition: transform .35s cubic-bezier(.2,.8,.2,1); border-top: 1px solid rgba(215,238,54,.25); }
+.sticky-cta.show { transform: none; }
+.sticky-cta img { width: 26px; height: auto; animation: float 2.6s ease-in-out infinite; }
+.sticky-cta span { flex: 1; color: var(--cream); font-size: 14px; font-weight: 600; line-height: 1.25; }
+.sticky-cta .btn { padding: 12px 18px; font-size: 14px; flex: none; }
+@media (min-width: 901px) { .sticky-cta { display: none; } }
+@media (max-width: 900px) {
+  .pin-card { display: inline-block; font-size: 30px; padding: 14px 20px; margin-top: 18px; }
+  body { padding-bottom: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .drop, .scroll-ball .b { display: none; } .scene .scene-pin image, .scene .pin-shadow { animation: none; } }
+.hero-scene::before { content: ""; position: absolute; left: 4%; right: 4%; bottom: 8%; height: 30%; background: radial-gradient(ellipse at 50% 60%, rgba(0,0,0,.35), transparent 70%); filter: blur(10px); pointer-events: none; }
+.scene { position: relative; }
+@media (max-width: 900px) {
+  .hero.hero-has-scene { padding-top: 92px; }
+  .hero.hero-has-scene .hero-scene { order: -1; max-width: 460px; margin: 0 auto -6px; }
+  .hero.hero-has-scene .scene-hint { display: none; }
+}
