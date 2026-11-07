@@ -22,7 +22,7 @@
     pin.addEventListener("input", function () {
       var v = pin.value;
       if (v.length === 6 && !/^40[0-1]/.test(v)) {
-        pinHint.textContent = "That's outside Mumbai. Still fine to register.";
+        pinHint.textContent = "Please use a Mumbai pincode (starting 400 or 401).";
         pinHint.classList.add("warn");
       } else {
         pinHint.textContent = "The pincode where you live.";
@@ -31,27 +31,25 @@
     });
   }
 
-  // guardian block for under-18s
-  var guardian = $("#guardian");
-  $all('input[name="ageGroup"]').forEach(function (r) {
-    r.addEventListener("change", function () {
-      var minor = r.value !== "18+";
+  // date of birth: no future dates; under-18s need a parent or guardian
+  var dob = $("#p-dob"), guardian = $("#guardian");
+  if (dob) {
+    var today = new Date();
+    dob.max = today.toISOString().slice(0, 10);
+    var ageOn = function (v) {
+      var d = new Date(v + "T00:00:00"); if (isNaN(d)) return null;
+      var a = today.getFullYear() - d.getFullYear(), m = today.getMonth() - d.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < d.getDate())) a--;
+      return a;
+    };
+    dob.addEventListener("change", function () {
+      var a = ageOn(dob.value), minor = a !== null && a < 18;
       guardian.classList.toggle("show", minor);
       $("#p-gname").required = minor;
       var lbl = $('label[for="p-mobile"]');
       if (lbl) lbl.textContent = minor ? "Parent's mobile (WhatsApp)" : "Mobile (WhatsApp)";
     });
-  });
-
-  // ready-made squad details
-  var squadBox = $("#squad-box");
-  $all('input[name="entryType"]').forEach(function (r) {
-    r.addEventListener("change", function () {
-      var squad = r.value !== "Individual" && r.checked;
-      squadBox.classList.toggle("show", squad);
-      $("#p-squadsize").required = squad;
-    });
-  });
+  }
 
   // clear error on change
   document.addEventListener("input", function (e) { var f = e.target.closest && e.target.closest(".field.invalid"); if (f) f.classList.remove("invalid"); });
@@ -72,6 +70,7 @@
         if (el.required && !v) good = false;
         else if (v && el.pattern && !new RegExp("^(?:" + el.pattern + ")$").test(v)) good = false;
         else if (v && el.type === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) good = false;
+        else if (v && el.type === "date" && ((el.max && v > el.max) || (el.min && v < el.min))) good = false;
       }
       if (!setInvalid(el, !good)) { ok = false; if (!first) first = el; }
     });
@@ -92,7 +91,7 @@
       if (!el.name) return;
       if (el.type === "radio") { if (el.checked) data[el.name] = el.value; return; }
       if (el.type === "checkbox") {
-        if (el.name === "consent" || el.name === "wantsDeck") { data[el.name] = el.checked ? "Yes" : "No"; return; }
+        if (/consent|Consent|Declaration|wantsDeck/.test(el.name)) { data[el.name] = el.checked ? "Yes" : "No"; return; }
         if (!el.checked) return;
         data[el.name] = data[el.name] ? data[el.name] + ", " + el.value : el.value;
         return;
